@@ -1,0 +1,42 @@
+# dsh-ofm-compat bundle patch.
+#
+# 一行 insert 即挂载 Host 半身。本插件没有浏览器半身（package.json 不声明 dsh.client），
+# 因为它只做模型路由，不需要界面。
+#
+# 所有字段都有安全默认值，可以整段删掉 config 直接留 config: {}。
+- insert:
+    - id: ofm-compat
+      name: 'dsh-ofm-compat'
+      config:
+        # 从哪个 provider 取候选模型（按顺序尝试；第二个是地区受限分组）
+        targetProviders:
+          - 'our-free-model'
+          - 'our-free-model-region'
+        # 向 WeChatAgent 暴露的固定路由与固定别名。这两个值一旦配好就不要再改，
+        # WeChatAgent 的 config/wechatagent.json 里填的就是它们。
+        route: 'wechatagent-free'
+        alias: 'auto'
+        # 优先使用的模型（命中即排前）。留空表示只按渠道 + 可用性排序。
+        prefer: []
+        # 永不使用的模型。
+        exclude: []
+        # 渠道偏好（白嫖优先）。可选值：eac（共付渠道/白嫖）、free（匿名免费通道）、
+        # kilo（Kilo 渠道）。默认先共付再匿名免费；传 [] 可关闭渠道偏好。
+        # 注意：若某条渠道被宿主解不开（例如共付渠道未解锁），它的模型会被
+        # our-free-model 直接摘掉，根本不进候选 —— 此时这里设了也没用，
+        # 请用 /status 的 lanes.eac.state 确认。
+        preferLanes:
+          - 'eac'
+          - 'free'
+        # 永不使用的渠道。
+        excludeLanes: []
+        # 疑似不可用后的冷却时长。冷却期内不再选中该模型/渠道。
+        cooldownMs: 900000
+        # 连续失败时的冷却上限：同一目标反复失败会翻倍到此为止，成功后立刻清零。
+        # 否则一个长期不可用的渠道（如未授权的共付渠道）会被周期性重试，
+        # 每次都让用户白等一次超时。
+        cooldownMaxMs: 3600000
+        # 只读状态接口（仅监听 127.0.0.1）。设为 0 关闭。
+        statusPort: 11231
+        # 状态文件写入位置（相对 DSH_HOME）。留空用默认值。
+        statusFile: ''
